@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StorageManager Tests</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .test-result {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+    }
+    .pass {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .fail {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .summary {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #e7f3ff;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>StorageManager Unit Tests</h1>
+  <div id="test-results"></div>
+  <div id="summary" class="summary"></div>
+
+  <script src="../js/app.js"></script>
+  <script>
+    // Simple test framework
+    const results = [];
+    
+    function test(description, fn) {
+      try {
+        fn();
+        results.push({ description, passed: true });
+        console.log('✓', description);
+      } catch (error) {
+        results.push({ description, passed: false, error: error.message });
+        console.error('✗', description, error);
+      }
+    }
+
+    function expect(actual) {
+      return {
+        toBe(expected) {
+          if (actual !== expected) {
+            throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+          }
+        },
+        toEqual(expected) {
+          if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+            throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+          }
+        }
+      };
+    }
+
+    function beforeEach(fn) {
+      fn();
+    }
+
+    // Run tests
+    console.log('Running StorageManager tests...');
+
+    // Clear localStorage before each test
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    // Test: saveTasks and loadTasks
+    test('should save tasks to localStorage with correct key', () => {
+      localStorage.clear();
+      const tasks = [
+        { id: '1', text: 'Task 1', completed: false, createdAt: 1704067200000 },
+        { id: '2', text: 'Task 2', completed: true, createdAt: 1704067300000 }
+      ];
+      
+      StorageManager.saveTasks(tasks);
+      
+      const stored = localStorage.getItem('tasks');
+      expect(stored).toBe(JSON.stringify(tasks));
+    });
+
+    test('should load tasks from localStorage', () => {
+      localStorage.clear();
+      const tasks = [
+        { id: '1', text: 'Task 1', completed: false, createdAt: 1704067200000 }
+      ];
+      
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      
+      const loaded = StorageManager.loadTasks();
+      expect(loaded).toEqual(tasks);
+    });
+
+    test('should return empty array when localStorage is empty (Requirement 5.4)', () => {
+      localStorage.clear();
+      const loaded = StorageManager.loadTasks();
+      expect(loaded).toEqual([]);
+    });
+
+    test('should handle empty task array', () => {
+      localStorage.clear();
+      StorageManager.saveTasks([]);
+      const loaded = StorageManager.loadTasks();
+      expect(loaded).toEqual([]);
+    });
+
+    test('should use "tasks" as storage key (Requirement 5.5)', () => {
+      expect(StorageManager.TASKS_KEY).toBe('tasks');
+    });
+
+    // Test: saveLinks and loadLinks
+    test('should save links to localStorage with correct key', () => {
+      localStorage.clear();
+      const links = [
+        { id: '1', name: 'GitHub', url: 'https://github.com', createdAt: 1704067200000 },
+        { id: '2', name: 'Google', url: 'https://google.com', createdAt: 1704067300000 }
+      ];
+      
+      StorageManager.saveLinks(links);
+      
+      const stored = localStorage.getItem('quickLinks');
+      expect(stored).toBe(JSON.stringify(links));
+    });
+
+    test('should load links from localStorage', () => {
+      localStorage.clear();
+      const links = [
+        { id: '1', name: 'GitHub', url: 'https://github.com', createdAt: 1704067200000 }
+      ];
+      
+      localStorage.setItem('quickLinks', JSON.stringify(links));
+      
+      const loaded = StorageManager.loadLinks();
+      expect(loaded).toEqual(links);
+    });
+
+    test('should return empty array when localStorage is empty (Requirement 5.4)', () => {
+      localStorage.clear();
+      const loaded = StorageManager.loadLinks();
+      expect(loaded).toEqual([]);
+    });
+
+    test('should handle empty links array', () => {
+      localStorage.clear();
+      StorageManager.saveLinks([]);
+      const loaded = StorageManager.loadLinks();
+      expect(loaded).toEqual([]);
+    });
+
+    test('should use "quickLinks" as storage key (Requirement 5.6)', () => {
+      expect(StorageManager.LINKS_KEY).toBe('quickLinks');
+    });
+
+    // Test: JSON serialization
+    test('should handle special characters in task text', () => {
+      localStorage.clear();
+      const tasks = [
+        { id: '1', text: 'Task with "quotes" and \'apostrophes\'', completed: false, createdAt: 1704067200000 }
+      ];
+      
+      StorageManager.saveTasks(tasks);
+      const loaded = StorageManager.loadTasks();
+      
+      expect(loaded).toEqual(tasks);
+    });
+
+    test('should handle special characters in link names and URLs', () => {
+      localStorage.clear();
+      const links = [
+        { id: '1', name: 'Link with "quotes"', url: 'https://example.com?param=value&other=123', createdAt: 1704067200000 }
+      ];
+      
+      StorageManager.saveLinks(links);
+      const loaded = StorageManager.loadLinks();
+      
+      expect(loaded).toEqual(links);
+    });
+
+    // Display results
+    const resultsDiv = document.getElementById('test-results');
+    const summaryDiv = document.getElementById('summary');
+    
+    let passed = 0;
+    let failed = 0;
+    
+    results.forEach(result => {
+      const div = document.createElement('div');
+      div.className = `test-result ${result.passed ? 'pass' : 'fail'}`;
+      div.textContent = `${result.passed ? '✓' : '✗'} ${result.description}`;
+      if (!result.passed) {
+        div.textContent += ` - ${result.error}`;
+        failed++;
+      } else {
+        passed++;
+      }
+      resultsDiv.appendChild(div);
+    });
+    
+    summaryDiv.textContent = `Tests: ${passed} passed, ${failed} failed, ${results.length} total`;
+    
+    console.log(`\nSummary: ${passed} passed, ${failed} failed, ${results.length} total`);
+  </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreetingDisplay Component Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+        }
+        #test-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>GreetingDisplay Component Tests</h1>
+    <div id="results"></div>
+    <div id="test-container"></div>
+
+    <script src="../js/app.js"></script>
+    <script>
+        // Simple test framework
+        const results = [];
+        const resultsDiv = document.getElementById('results');
+
+        function assert(condition, message) {
+            if (condition) {
+                results.push({ pass: true, message });
+                console.log('✓', message);
+            } else {
+                results.push({ pass: false, message });
+                console.error('✗', message);
+            }
+        }
+
+        function assertEquals(actual, expected, message) {
+            const condition = actual === expected;
+            if (!condition) {
+                console.error(`Expected: ${expected}, Got: ${actual}`);
+            }
+            assert(condition, message);
+        }
+
+        function displayResults() {
+            const passed = results.filter(r => r.pass).length;
+            const total = results.length;
+            
+            results.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test-result ${result.pass ? 'pass' : 'fail'}`;
+                div.textContent = `${result.pass ? '✓' : '✗'} ${result.message}`;
+                resultsDiv.appendChild(div);
+            });
+
+            const summary = document.createElement('div');
+            summary.className = 'summary';
+            summary.innerHTML = `<strong>Test Summary:</strong> ${passed}/${total} tests passed`;
+            resultsDiv.appendChild(summary);
+        }
+
+        // Run tests
+        console.log('Running GreetingDisplay Component Tests...\n');
+
+        // Test 1: Constructor accepts container element
+        const container = document.getElementById('test-container');
+        const greeting = new GreetingDisplay(container);
+        assert(greeting.container === container, 'Constructor accepts and stores container element');
+
+        // Test 2: getGreeting returns correct greeting for morning hours (5-11)
+        assertEquals(greeting.getGreeting(5), 'Good Morning', 'getGreeting(5) returns "Good Morning" (Requirement 1.3)');
+        assertEquals(greeting.getGreeting(8), 'Good Morning', 'getGreeting(8) returns "Good Morning" (Requirement 1.3)');
+        assertEquals(greeting.getGreeting(11), 'Good Morning', 'getGreeting(11) returns "Good Morning" (Requirement 1.3)');
+
+        // Test 3: getGreeting returns correct greeting for afternoon hours (12-16)
+        assertEquals(greeting.getGreeting(12), 'Good Afternoon', 'getGreeting(12) returns "Good Afternoon" (Requirement 1.4)');
+        assertEquals(greeting.getGreeting(14), 'Good Afternoon', 'getGreeting(14) returns "Good Afternoon" (Requirement 1.4)');
+        assertEquals(greeting.getGreeting(16), 'Good Afternoon', 'getGreeting(16) returns "Good Afternoon" (Requirement 1.4)');
+
+        // Test 4: getGreeting returns correct greeting for evening hours (17-20)
+        assertEquals(greeting.getGreeting(17), 'Good Evening', 'getGreeting(17) returns "Good Evening" (Requirement 1.5)');
+        assertEquals(greeting.getGreeting(19), 'Good Evening', 'getGreeting(19) returns "Good Evening" (Requirement 1.5)');
+        assertEquals(greeting.getGreeting(20), 'Good Evening', 'getGreeting(20) returns "Good Evening" (Requirement 1.5)');
+
+        // Test 5: getGreeting returns correct greeting for night hours (21-4)
+        assertEquals(greeting.getGreeting(21), 'Good Night', 'getGreeting(21) returns "Good Night" (Requirement 1.6)');
+        assertEquals(greeting.getGreeting(23), 'Good Night', 'getGreeting(23) returns "Good Night" (Requirement 1.6)');
+        assertEquals(greeting.getGreeting(0), 'Good Night', 'getGreeting(0) returns "Good Night" (Requirement 1.6)');
+        assertEquals(greeting.getGreeting(4), 'Good Night', 'getGreeting(4) returns "Good Night" (Requirement 1.6)');
+
+        // Test 6: formatTime returns HH:MM:SS format
+        const testDate1 = new Date('2024-01-01T09:05:03');
+        assertEquals(greeting.formatTime(testDate1), '09:05:03', 'formatTime formats time as HH:MM:SS');
+
+        const testDate2 = new Date('2024-01-01T14:30:45');
+        assertEquals(greeting.formatTime(testDate2), '14:30:45', 'formatTime handles afternoon times correctly');
+
+        const testDate3 = new Date('2024-01-01T00:00:00');
+        assertEquals(greeting.formatTime(testDate3), '00:00:00', 'formatTime handles midnight correctly');
+
+        // Test 7: formatDate returns human-readable format
+        const testDate4 = new Date('2024-01-01T12:00:00');
+        const formattedDate = greeting.formatDate(testDate4);
+        assert(formattedDate.includes('Monday'), 'formatDate includes day name (Requirement 1.1)');
+        assert(formattedDate.includes('January'), 'formatDate includes month name (Requirement 1.1)');
+        assert(formattedDate.includes('1'), 'formatDate includes day number (Requirement 1.1)');
+        assert(formattedDate.includes('2024'), 'formatDate includes year (Requirement 1.1)');
+
+        // Test 8: init() creates DOM structure
+        greeting.init();
+        const dateDisplay = container.querySelector('.date-display');
+        const timeDisplay = container.querySelector('.time-display');
+        const greetingMessage = container.querySelector('.greeting-message');
+        
+        assert(dateDisplay !== null, 'init() creates date-display element');
+        assert(timeDisplay !== null, 'init() creates time-display element');
+        assert(greetingMessage !== null, 'init() creates greeting-message element');
+
+        // Test 9: updateDisplay populates DOM elements
+        assert(dateDisplay.textContent.length > 0, 'updateDisplay populates date display (Requirement 1.1)');
+        assert(timeDisplay.textContent.length > 0, 'updateDisplay populates time display (Requirement 1.2)');
+        assert(greetingMessage.textContent.length > 0, 'updateDisplay populates greeting message');
+
+        // Test 10: Time display format is correct
+        const timePattern = /^\d{2}:\d{2}:\d{2}$/;
+        assert(timePattern.test(timeDisplay.textContent), 'Time display matches HH:MM:SS format (Requirement 1.2)');
+
+        // Test 11: Greeting message is one of the valid greetings
+        const validGreetings = ['Good Morning', 'Good Afternoon', 'Good Evening', 'Good Night'];
+        assert(validGreetings.includes(greetingMessage.textContent), 'Greeting message is valid');
+
+        // Test 12: destroy() clears interval
+        assert(greeting.intervalId !== null, 'init() sets intervalId');
+        greeting.destroy();
+        assert(greeting.intervalId === null, 'destroy() clears intervalId');
+
+        // Display results
+        displayResults();
+    </script>
+</body>
+</html>
